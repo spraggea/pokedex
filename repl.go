@@ -1,19 +1,45 @@
 package main
 
-import "strings"
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
+)
 
-/*
+type cliCommand struct {
+	name        string
+	description string
+	callback    func(*config) error
+}
 
-The purpose of this function will be to split the user's input into "words" based on whitespace.
-It should also lowercase the input and trim any leading or trailing whitespace. For example:
+type config struct {
+	Next     *string
+	Previous *string
+}
 
-E.G
+func getCommands() map[string]cliCommand { // Storing commands in a map that we can access via this func
+	//Helps get past the cycle initialization of var names the callback func.
 
-hello world -> ["hello", "world"]
-Charmander Bulbasaur PIKACHU -> ["charmander", "bulbasaur", "pikachu"]
+	return map[string]cliCommand{
+		"exit": {
+			name:        "exit",
+			description: "Exit the Pokedex",
+			callback:    commandExit,
+		},
 
-
-*/
+		"help": {
+			name:        "help",
+			description: "Displays a help message",
+			callback:    commandhelp,
+		},
+		"map": {
+			name:        "map",
+			description: "Displays 20 new map locations",
+			callback:    commandmap,
+		},
+	}
+}
 
 func cleanInput(text string) []string {
 
@@ -24,11 +50,37 @@ func cleanInput(text string) []string {
 
 }
 
-//Two main things, iterate over the string, and each time we get whitepsace and the prev char was a charatcer
-//Means this is a new word, we split at this point, and make sure the whole string is lowercase
+func startRepl(cfg *config) {
 
-/*
+	scanner := bufio.NewScanner(os.Stdin)
 
+	for {
+		fmt.Print("Pokedex >")
 
+		success := scanner.Scan()
+		if !success {
+			break
 
- */
+		}
+
+		userInput := scanner.Text()
+
+		cleanedInput := cleanInput(userInput)
+		if len(cleanedInput) == 0 {
+			continue
+		}
+		command := cleanedInput[0]
+
+		cmd, exists := getCommands()[command]
+		if exists {
+			err := cmd.callback(cfg)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+		} else {
+			fmt.Println("Unknown command")
+		}
+
+	}
+}
